@@ -33,9 +33,11 @@ def translate_file_to_hindi(file_path: str) -> str:
 
 
 def save_translated_file(file_path: str, translated_content: str) -> str:
-    """Save translated content as <original_name>_hindi.txt in the same directory."""
+    """Save translated content as <original_name>_hindi.txt in hindi_translated/ folder."""
     p = Path(file_path)
-    translated_path = p.parent / (p.stem + "_hindi.txt")
+    output_dir = Path("hindi_translated")
+    output_dir.mkdir(exist_ok=True)
+    translated_path = output_dir / (p.stem + "_hindi.txt")
     with open(translated_path, "w", encoding="utf-8") as f:
         f.write(translated_content)
     print(f"Saved translated file: {translated_path}")
