@@ -1,0 +1,2 @@
+About this upgrade
+Wappalyzer updates automatically, so the latest version is already active in your browser. This release adds new technology detections and fixes to improve coverage and reliability across the sites you research.
