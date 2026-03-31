@@ -1,15 +1,10 @@
 """
-Translate uploaded text files to Hindi and email the translated file
-to the PR author.
+Translate uploaded text files to Hindi and save the translated file
+back to the same directory in the repository.
 """
 
 import os
 import sys
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 from pathlib import Path
 
 from googletrans import Translator
@@ -37,69 +32,29 @@ def translate_file_to_hindi(file_path: str) -> str:
     return "".join(translated_chunks)
 
 
-def send_email(
-    recipient_email: str,
-    pr_author: str,
-    original_filename: str,
-    translated_content: str,
-):
-    """Send the translated file as an attachment via SMTP."""
-    smtp_host = os.environ["SMTP_HOST"]
-    smtp_port = int(os.environ["SMTP_PORT"])
-    smtp_user = os.environ["SMTP_USER"]
-    smtp_password = os.environ["SMTP_PASSWORD"]
-    sender_email = os.environ["SENDER_EMAIL"]
-
-    msg = MIMEMultipart()
-    msg["From"] = sender_email
-    msg["To"] = recipient_email
-    msg["Subject"] = f"Hindi Translation: {original_filename}"
-
-    body = (
-        f"Hi @{pr_author},\n\n"
-        f'Your file "{original_filename}" has been translated to Hindi.\n'
-        f"Please find the translated file attached.\n\n"
-        f"— Automated Translation Bot"
-    )
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-
-    # Attach translated file
-    translated_filename = Path(original_filename).stem + "_hindi.txt"
-    attachment = MIMEBase("application", "octet-stream")
-    attachment.set_payload(translated_content.encode("utf-8"))
-    encoders.encode_base64(attachment)
-    attachment.add_header(
-        "Content-Disposition", f"attachment; filename={translated_filename}"
-    )
-    msg.attach(attachment)
-
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(sender_email, recipient_email, msg.as_string())
-
-    print(f"Email sent to {recipient_email} with translated file: {translated_filename}")
+def save_translated_file(file_path: str, translated_content: str) -> str:
+    """Save translated content as <original_name>_hindi.txt in the same directory."""
+    p = Path(file_path)
+    translated_path = p.parent / (p.stem + "_hindi.txt")
+    with open(translated_path, "w", encoding="utf-8") as f:
+        f.write(translated_content)
+    print(f"Saved translated file: {translated_path}")
+    return str(translated_path)
 
 
 def main():
     changed_files = os.environ.get("CHANGED_FILES", "").strip()
-    recipient_email = os.environ.get("RECIPIENT_EMAIL", "").strip()
-    pr_author = os.environ.get("PR_AUTHOR", "unknown")
 
     if not changed_files:
         print("No new .txt files found in uploads/. Nothing to do.")
         sys.exit(0)
 
-    if not recipient_email:
-        print(
-            f"WARNING: Could not determine email for @{pr_author}. "
-            "Falling back to default email."
-        )
-        recipient_email = "anmolnarang280@gmail.com"
-
     for file_path in changed_files.splitlines():
         file_path = file_path.strip()
         if not file_path or not file_path.endswith(".txt"):
+            continue
+        # Skip already-translated files
+        if file_path.endswith("_hindi.txt"):
             continue
 
         print(f"Translating: {file_path}")
@@ -107,8 +62,7 @@ def main():
         if not translated:
             continue
 
-        original_name = Path(file_path).name
-        send_email(recipient_email, pr_author, original_name, translated)
+        save_translated_file(file_path, translated)
 
     print("All files processed.")
 
