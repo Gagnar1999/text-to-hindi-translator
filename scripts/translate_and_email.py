@@ -93,9 +93,9 @@ def main():
     if not recipient_email:
         print(
             f"WARNING: Could not determine email for @{pr_author}. "
-            "Make sure the GitHub profile has a public email."
+            "Falling back to default email."
         )
-        sys.exit(1)
+        recipient_email = "anmolnarang280@gmail.com"
 
     for file_path in changed_files.splitlines():
         file_path = file_path.strip()
