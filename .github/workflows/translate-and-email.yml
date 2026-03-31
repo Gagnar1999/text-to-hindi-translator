@@ -1,13 +1,13 @@
 name: Translate Text File to Hindi
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
     paths:
       - 'uploads/**/*.txt'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 jobs:
@@ -18,9 +18,15 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Fetch base branch for diff
+        run: |
+          git remote add base_repo https://github.com/${{ github.repository }}.git
+          git fetch base_repo ${{ github.event.pull_request.base.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,7 +39,7 @@ jobs:
       - name: Get changed txt files
         id: changed-files
         run: |
-          FILES=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD -- 'uploads/*.txt' | grep -v '_hindi\.txt$' || true)
+          FILES=$(git diff --name-only --diff-filter=A base_repo/${{ github.event.pull_request.base.ref }}...HEAD -- 'uploads/*.txt' | grep -v '_hindi\.txt$' || true)
           echo "files<<EOF" >> $GITHUB_OUTPUT
           echo "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
