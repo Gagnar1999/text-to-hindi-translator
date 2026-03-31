@@ -48,6 +48,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add uploads/*_hindi.txt
+          git add hindi_translated/*_hindi.txt
           git diff --cached --quiet || git commit -m "Add Hindi translation(s)"
           git push
